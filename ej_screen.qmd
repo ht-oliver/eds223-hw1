@@ -1,0 +1,137 @@
+---
+title: "EDS 223 HW#1"
+format: html
+---
+
+```{r}
+# Load in relevant libraries
+
+library(tidyverse)
+library(sf)
+library(here)
+library(tmap)
+library(stars)
+library(terra)
+```
+
+
+```{r}
+# read in geodatabase of EJScreen data at the Census Block Group level
+ejscreen <- sf::st_read(here::here("data", "ejscreen","EJSCREEN_2023_BG_StatePct_with_AS_CNMI_GU_VI.gdb"))
+```
+
+
+```{r}
+# Read in data for city points, filter to most populous cities (per google search)
+mi_cities <- sf::st_read(here::here("data", "tl_2017_26_place", "tl_2017_26_place.shp")) %>% 
+  filter((NAME == "Detroit" )| (NAME == "Dearborn"))
+
+# Summarize geometries to get just state borders (for inset map)
+states <- ejscreen %>% 
+  group_by(ST_ABBREV) %>% 
+  summarise() %>% 
+  ungroup()
+```
+
+
+```{r}
+# filter to Michigan
+michigan <- ejscreen %>%
+  dplyr::filter(ST_ABBREV == "MI") 
+
+# Create a shapefile for just the counties
+mi_counties <- michigan %>% 
+  group_by(CNTY_NAME) %>%   # Group by counties
+  summarise() %>% # Summarize geometries(default) for each county
+  ungroup()
+
+# filter to Wayne County and surrounding counties in map extent
+wayne <- michigan %>%
+  dplyr::filter(CNTY_NAME %in% c("Wayne County",
+    "Oakland County",
+    "Macomb County",
+    "Washtenaw County",
+    "Monroe County"))
+
+
+
+# Read in shapefile for the great lakes
+great_lakes <- sf::st_read(here::here("data", "GL250515_lam", "GL250515_lam.shp"))
+```
+
+```{r}
+# Set bounds for primary display maps
+bounds <- st_bbox(c(xmin = -83.6, xmax = -82.63, ymin = 42.02, ymax = 42.5))
+
+# Set bounds for inset map
+state_bounds <- st_bbox(c(xmin = -89, xmax = -76 , ymin =  39.5, ymax = 47.5))
+```
+
+```{r}
+# Create palette for hazardous waste sites
+palette = palette = (c('#fef0d9',
+                    '#fdcc8a',
+                    '#fc8d59',
+                    '#d7301f',
+                    '#8b0000'))
+```
+
+
+```{r}
+
+tm_shape(wayne, bbox = bounds) + # Plot county polygons within bounds
+  tm_polygons(fill = 'PTSDF', # Determine fill parameter
+              breaks = c(0, 1, 3, 5, 7, Inf), # Set bin breaks
+              palette = palette, # Set color palette
+              lty = 'blank', # Remove census borders,
+              title = "Sites within 5km", # Title legend
+              labels = c("0", "1-2", "3-5", "5-7", "7+")) + # Set legend labels
+            
+  tm_shape(mi_cities) + # Determine shape for most populous cities
+  tm_dots() + # Add points for most populous cities
+  tm_text(text = 'NAME', ymod = 0.5) + # Add text above most populous cities
+  tm_shape(mi_counties, bbox = bounds) + # Add county borders
+  tm_borders() +
+  tm_shape(great_lakes)+ # Add great lakes borders
+  tm_polygons(fill = "lightblue") +
+  tm_layout(title = "Proximity to Hazardous Waste Sites in Wayne County, MI", # Add title
+            size = 3,
+            title.position = c(0, 1.1)) + # Specify title position
+  tm_scale_bar(position = c(0, 0)) +
+  tm_compass(position = c(0.65, 0.32), size = 3) +
+  tm_inset(inset_map,   # Add inset map
+           width = 10,
+           height = 10, # Set size and position of inset map
+           position = c(0.8, 0.5))
+
+  
+ 
+ 
+```
+
+
+
+```{r}
+# Create inset map
+# Create geometry for 
+
+# Set bounds to states
+inset_map <- (
+tm_shape(states, bbox = state_bounds) +
+  tm_polygons(fill = "#fef0d9") +
+  # Add text to list state abbreviation
+  tm_text("ST_ABBREV", size = 0.75, col = "black", fontface = "bold",
+          # Adjust text position so state names are visible
+          xmod = 1.35, ymod = -0.75) + 
+  # Add great lakes
+tm_shape(great_lakes) +
+  tm_polygons(fill = "lightblue"))
+ 
+```
+
+
+
+```{r}
+
+```
+
