@@ -8,7 +8,7 @@ The purpose of this repository is to house that data and scripts that produce me
 ## Contents
 ```
 
-├── data: Data is not present in repository. See Data Access section
+├── data: # Data is not present in repository. See Data Access section for download instructions
 │   ├── ejscreen
 │   ├── GL250515_lam
 │   └── tl_2017_26_place
@@ -22,8 +22,6 @@ The purpose of this repository is to house that data and scripts that produce me
 ├── ej_screen_files
 │   ├── figure-html
 │   ├── figure-pdf
-│   │   ├── unnamed-chunk-10-1.pdf
-│   │   └── unnamed-chunk-9-1.pdf
 │   └── libs
 │       ├── bootstrap
 │       ├── clipboard

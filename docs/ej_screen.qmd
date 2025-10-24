@@ -1,7 +1,10 @@
 ---
-title: "EDS 223 HW#1"
+title: "Environmental Justice in Wayne County, MI"
 format: html
 warning: False
+execute: 
+  warning: False
+  message: False
 ---
 
 # *Assessing proximity of hazardous waste disposal sites to low income communities*
@@ -10,7 +13,7 @@ warning: False
 #### Author - Henry Oliver
 
 ## Purpose:
-The purpose of this document is to practice geospatial data analysis by creating visually appealing maps that display an environmental injustice in Michigan's Murray County.
+The purpose of this document is to practice geospatial data analysis by creating visually appealing maps that display an environmental injustice in Michigan's Wayne County.
 
 ## Workflow:
 
@@ -26,17 +29,19 @@ library(stars)
 library(terra)
 ```
 
-### 2)  Read in geodatabase of EJScreen data at the Census Block Group level
+### 2)  Read in geodatabase of EJScreen data at the Census Block Group level<sup/>1<sup>
 
 ```{r}
 #| message: False
-ejscreen <- sf::st_read(here::here("data", "ejscreen","EJSCREEN_2023_BG_StatePct_with_AS_CNMI_GU_VI.gdb"), quiet = TRUE)
+ejscreen <- sf::st_read(here::here("data", "ejscreen","EJSCREEN_2023_BG_StatePct_with_AS_CNMI_GU_VI.gdb"), quiet = TRUE) %>% 
+  select(PTSDF, STATE_NAME, ST_ABBREV, CNTY_NAME, ACSTOTPOP, LOWINCOME, LOWINCPCT, Shape)
 ```
 
-### 3)  Read in other data to be used in map display
+### 3)  Read in other data to be used in map display<sup/>2, 3<sup>
 
 ```{r}
 #| message: False
+
 # Shapefile for cities in detroit, filtered for most populous
 mi_cities <- sf::st_read(here::here("data", "tl_2017_26_place", "tl_2017_26_place.shp"), quiet = TRUE) %>% 
   st_transform(crs = st_crs(ejscreen)) %>% # Transform CRS for inset map
@@ -47,20 +52,6 @@ great_lakes <- sf::st_read(here::here("data", "GL250515_lam", "GL250515_lam.shp"
   st_transform(crs = st_crs(ejscreen))
 ```
 
-```{r}
-#| echo: False
-if (st_crs(mi_cities) == st_crs(ejscreen)) {
-  print("CRS for ejscreen and mi_cities are matching")
-} else {
-  print("CRS DOES NOT MATCH")
-}
-
-if (st_crs(great_lakes) == st_crs(ejscreen)) {
-  print("CRS for ejscreen and great_lakes are matching")
-} else {
-  print("CRS DOES NOT MATCH")
-}
-```
 
 ### 4)  Summarize geometries to get just state borders (for inset map)
 
@@ -92,6 +83,7 @@ wayne <- michigan %>%
     "Washtenaw County",
     "Monroe County"))
 
+# Create extent border in inset map from study area
 wayne_inset <- st_union(wayne, by = 'Shape')
 
 ```
@@ -201,14 +193,14 @@ tm_shape(wayne, bbox = bounds) + # Plot county polygons within bounds
 
 ## Summary:
 
-  Fig 1 above shows the concentration of hazardous waste disposal sites (HWDS) for census blocks in Wayne County, MI, where a darker shade of red on the map corresponds to a higher number of HWDSs within 5 kilometers (km) of each census block. Fig 2 shows the percentage of low income households per census block, where a darker shade of red corresponds to higher percentage of low-income households. As we see on the maps, there are high clusters of both HWDS and low-income households 5km Southeast of Dearborn, and about 5km southeast of Detroit.  Furthermore, there are significant clusters of both variables on the coast about 20km southeast of Dearborn. Clusters appear less congruent in the western portion of the county, although 20km west of Detroit there is a high concentration of low-income households that correspond with a higher density of HWDS. At the very least, these figures show that the concentrations of low income households and hazardous waste disposal are both highest in northeast Wayne County, near Detroit. Though hazardous waste site density could likely be correlated more closely with population density, the correlations between the two variables plotted above encourage more research towards my hypothesis that low-income households in Murray county are more likely to be located near HWDSs than their higher-income counterparts
+  Fig 1 above shows the concentration of hazardous waste disposal sites (HWDS) for census blocks in Wayne County, MI, where a darker shade of red on the map corresponds to a higher number of HWDSs within 5 kilometers (km) of each census block. Fig 2 shows the percentage of low income households per census block, where a darker shade of red corresponds to higher percentage of low-income households. As we see on the maps, there are high clusters of both HWDS and low-income households 5km Southeast of Dearborn, and about 5km southeast of Detroit.  Furthermore, there are significant clusters of both variables on the coast about 20km southeast of Dearborn. Clusters appear less congruent in the western portion of the county, although 20km west of Detroit there is a high concentration of low-income households that correspond with a higher density of HWDS. At the very least, these figures show that the concentrations of low income households and hazardous waste disposal are both highest in northeast Wayne County, near Detroit. Though hazardous waste site density could likely be correlated more closely with population density, the correlations between the two variables plotted above encourage more research towards my hypothesis that low-income households in Murray county are more likely to be located near HWDSs than their higher-income counterparts.
   
   
   
 ### References:
 
-U.S. Environmental Protection Agency (EPA), 2023. EJScreen Technical Documentation.
+<sup>1</sup> U.S. Environmental Protection Agency (EPA), 2023. EJScreen Technical Documentation.
 
-U.S. Census Bureau. (n.d.). TIGER/Line shapefile, 2017, Michigan current place (state‑based) [Data set] https://catalog.data.gov/dataset/tiger-line-shapefile-2017-state-michigan-current-place-state-based
+<sup>2</sup> U.S. Census Bureau. (n.d.). TIGER/Line shapefile, 2017, Michigan current place (state‑based) [Data set] https://catalog.data.gov/dataset/tiger-line-shapefile-2017-state-michigan-current-place-state-based
 
-U.S. National Ice Center. (n.d.). Great Lakes data support files. Retrieved October 6, 2025, from https://usicecenter.gov/Products/GreatLakesData
+<sup>3</sup> U.S. National Ice Center. (n.d.). Great Lakes data support files. Retrieved October 6, 2025, from https://usicecenter.gov/Products/GreatLakesData
