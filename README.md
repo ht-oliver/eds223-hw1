@@ -17,7 +17,7 @@ The purpose of this repository is to house that data and scripts that produce me
 |
 ├── EDS 223 HW#1.pdf
 |
-├── eds223-hw1.Rproj
+├── env_injustice_Wayne_MI.Rproj
 |
 ├── ej_screen_files
 │   ├── figure-html
