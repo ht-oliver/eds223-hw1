@@ -1,4 +1,4 @@
-# EDS 223 - Homework 1
+# Exploring Environmental Justice in Wayne County, Michigan
 Map making practice for EDS 223 - Environmental Injustice in Wayne County, Michigan
 
 
