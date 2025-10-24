@@ -1,7 +1,7 @@
 ---
 title: "EDS 223 HW#1"
 format: html
-warning: FALSE
+warning: False
 ---
 
 # *Assessing proximity of hazardous waste disposal sites to low income communities*
@@ -29,18 +29,37 @@ library(terra)
 ### 2)  Read in geodatabase of EJScreen data at the Census Block Group level
 
 ```{r}
-ejscreen <- sf::st_read(here::here("data", "ejscreen","EJSCREEN_2023_BG_StatePct_with_AS_CNMI_GU_VI.gdb"))
+#| message: False
+ejscreen <- sf::st_read(here::here("data", "ejscreen","EJSCREEN_2023_BG_StatePct_with_AS_CNMI_GU_VI.gdb"), quiet = TRUE)
 ```
 
 ### 3)  Read in other data to be used in map display
 
 ```{r}
+#| message: False
 # Shapefile for cities in detroit, filtered for most populous
-mi_cities <- sf::st_read(here::here("data", "tl_2017_26_place", "tl_2017_26_place.shp")) %>% 
+mi_cities <- sf::st_read(here::here("data", "tl_2017_26_place", "tl_2017_26_place.shp"), quiet = TRUE) %>% 
+  st_transform(crs = st_crs(ejscreen)) %>% # Transform CRS for inset map
   filter((NAME == "Detroit" )| (NAME == "Dearborn"))
 
 # Read in shapefile for the great lakes
-great_lakes <- sf::st_read(here::here("data", "GL250515_lam", "GL250515_lam.shp"))
+great_lakes <- sf::st_read(here::here("data", "GL250515_lam", "GL250515_lam.shp"), quiet = TRUE) %>% 
+  st_transform(crs = st_crs(ejscreen))
+```
+
+```{r}
+#| echo: False
+if (st_crs(mi_cities) == st_crs(ejscreen)) {
+  print("CRS for ejscreen and mi_cities are matching")
+} else {
+  print("CRS DOES NOT MATCH")
+}
+
+if (st_crs(great_lakes) == st_crs(ejscreen)) {
+  print("CRS for ejscreen and great_lakes are matching")
+} else {
+  print("CRS DOES NOT MATCH")
+}
 ```
 
 ### 4)  Summarize geometries to get just state borders (for inset map)
@@ -73,6 +92,8 @@ wayne <- michigan %>%
     "Washtenaw County",
     "Monroe County"))
 
+wayne_inset <- st_union(wayne, by = 'Shape')
+
 ```
 
 ### 6)  Create bounding boxes for primary map(s) and inset map(s)
@@ -83,6 +104,8 @@ bounds <- st_bbox(c(xmin = -83.6, xmax = -82.63, ymin = 42.02, ymax = 42.5))
 
 # Set bounds for inset map
 state_bounds <- st_bbox(c(xmin = -89, xmax = -76 , ymin =  39, ymax = 47))
+
+
 ```
 
 ### 7)  Create inset map
@@ -99,7 +122,10 @@ tm_shape(states, bbox = state_bounds) +
           fontface = "bold", # Make it bold
           xmod = 1.35, ymod = -0.75) + # Change the position of text relative to centroid (so we can see it)
 tm_shape(great_lakes) + # Add the great lakes shape
-  tm_polygons(fill = "lightblue"))
+  tm_polygons(fill = "lightblue")) +
+  tm_shape(wayne_inset) +
+  tm_borders(col = 'red', lwd = 3)
+
 ```
 
 ### 8)  Create palette for display
@@ -118,12 +144,12 @@ palette = palette = (c('#fef0d9',
 ```{r}
 
 tm_shape(wayne, bbox = bounds) + # Plot county polygons within bounds
-  tm_polygons(fill = 'PTSDF', # Determine fill parameter (proximity to haz. waste)
-              breaks = c(0, 1, 3, 5, 7, Inf), # Set bin breaks
-              palette = palette, # Set color palette
-              lty = 'blank', # Remove census borders,
-              title = "Sites within 5km", # Title legend
-              labels = c("0", "1-2", "3-5", "5-7", "7+")) + # Set legend labels
+  tm_polygons(fill = 'PTSDF',
+            breaks = c(0, 1, 3, 5, 7, Inf), # Set bin breaks
+            palette = palette, # Set color palette
+            lty = 'blank', # Remove census borders,
+            title = "Sites within 5km", # Title legend
+            labels = c("0", "1-2", "3-5", "5-7", "7+")) + # Determine fill param
   tm_shape(mi_counties, bbox = bounds) + # Add county borders
   tm_borders() +
   tm_shape(great_lakes)+ # Add great lakes borders
@@ -131,10 +157,10 @@ tm_shape(wayne, bbox = bounds) + # Plot county polygons within bounds
    tm_shape(mi_cities) + # Determine shape for most populous cities
   tm_dots() + # Add points for most populous cities
   tm_text(text = 'NAME', ymod = 0.5, fontface = 'bold', size = 0.75) +
-  tm_layout(title = "Fig 1: Proximity to Hazardous Waste Sites in Wayne County, MI", # Add title
+  tm_title(text = "Fig 1: Proximity to Hazardous Waste Sites in Wayne County, MI", # Add title
             size = 3,
-            title.position = c(0, 1.1)) + # Specify title position
-  tm_scale_bar(position = c(0, 0)) +
+            position = c(0, 1.1)) + # Specify title position
+  tm_scalebar(position = c(0, 0)) +
   tm_compass(position = c(0.65, 0.32), size = 3) +
   tm_inset(inset_map,   # Add inset map
            width = 10,
@@ -155,19 +181,20 @@ tm_shape(wayne, bbox = bounds) + # Plot county polygons within bounds
   tm_borders() +
   tm_shape(great_lakes)+ # Add great lakes borders
   tm_polygons(fill = "lightblue") +
-  tm_layout(title = "Fig 2: Percentage of Low Income Households in Wayne County, MI", # Add title
+  tm_title(text = "Fig 2: Percentage of Low Income Households in Wayne County, MI", # Add title
             size = 3,
-            title.position = c(0, 1.1)) + 
+            position = c(0, 1.1)) + 
   tm_shape(mi_cities) + # Determine shape for most populous cities
   tm_dots() + # Add points for most populous cities
   tm_text(text = 'NAME', ymod = -0.5, col = 'black', fontface = 'bold', size = 0.75 ) + # Add text above most populous cities
   # Specify title position
-  tm_scale_bar(position = c(0, 0)) +
+  tm_scalebar(position = c(0, 0)) +
   tm_compass(position = c(0.65, 0.32), size = 3) +
   tm_inset(inset_map,   # Add inset map
            width = 10,
            height = 9, # Set size and position of inset map
-           position = c(0.8, 0.5))
+           position = c(0.8, 0.5),
+           frame = FALSE)
 
  
 ```
@@ -175,3 +202,13 @@ tm_shape(wayne, bbox = bounds) + # Plot county polygons within bounds
 ## Summary:
 
   Fig 1 above shows the concentration of hazardous waste disposal sites (HWDS) for census blocks in Wayne County, MI, where a darker shade of red on the map corresponds to a higher number of HWDSs within 5 kilometers (km) of each census block. Fig 2 shows the percentage of low income households per census block, where a darker shade of red corresponds to higher percentage of low-income households. As we see on the maps, there are high clusters of both HWDS and low-income households 5km Southeast of Dearborn, and about 5km southeast of Detroit.  Furthermore, there are significant clusters of both variables on the coast about 20km southeast of Dearborn. Clusters appear less congruent in the western portion of the county, although 20km west of Detroit there is a high concentration of low-income households that correspond with a higher density of HWDS. At the very least, these figures show that the concentrations of low income households and hazardous waste disposal are both highest in northeast Wayne County, near Detroit. Though hazardous waste site density could likely be correlated more closely with population density, the correlations between the two variables plotted above encourage more research towards my hypothesis that low-income households in Murray county are more likely to be located near HWDSs than their higher-income counterparts
+  
+  
+  
+### References:
+
+U.S. Environmental Protection Agency (EPA), 2023. EJScreen Technical Documentation.
+
+U.S. Census Bureau. (n.d.). TIGER/Line shapefile, 2017, Michigan current place (state‑based) [Data set] https://catalog.data.gov/dataset/tiger-line-shapefile-2017-state-michigan-current-place-state-based
+
+U.S. National Ice Center. (n.d.). Great Lakes data support files. Retrieved October 6, 2025, from https://usicecenter.gov/Products/GreatLakesData
